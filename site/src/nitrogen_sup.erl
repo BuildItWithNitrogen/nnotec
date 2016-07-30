@@ -26,5 +26,6 @@ init([]) ->
     application:start(crypto),
     application:start(nprocreg),
     application:start(simple_bridge),
-
+    application:start(mnesia),
+    application:start(bcrypt),
     {ok, { {one_for_one, 5, 10}, []} }.

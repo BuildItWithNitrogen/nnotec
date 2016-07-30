@@ -11,54 +11,84 @@ body {
 
 #contain {
     margin-top: 1em;
-    margin-left: 15%;
-    margin-right: 15%;
-    width: 70%;
+    margin-left: 10%;
+    margin-right: 10%;
+    width: 80%;
 }
 
-#wg_top {
+#top {
     width: 100%;
     padding-bottom: .5em;
     margin-bottom: 1em;
 }
 
-#wg_main_menu {
+#main_menu {
     width: 100%;
     padding-bottom: .5em;
     margin-bottom: 1em;
 }
 
-
-a.mmselected {
-  font-size: 140%;
-  text-decoration: none;
-  color: black;
-}
-
-a.mmunselected {
-  font-size: 140%;
-  text-decoration: none;
-  color: #666666;
-}
-
-
-#wg_sidebar {
+#sidebar {
     width: 24%;
     margin-right: 1%;
     float: left;
 }
 
-#wg_content {
+#content {
     width: 75%;
     float: right;
 }   
 
 
-.container_12 {
+#container_12 {
     margin-top: 40px;
 }
 
 
+h1.content {
+   margin-top: .3em;
+   margin-bottom: .5em;
+   padding-top: 0;
+   font-style: italic;
+   font-weight: 100;
+}
+
+h2.content {
+   margin-top: 0em;
+   margin-bottom: .7em;
+   padding: 0;
+   font-size: 140%;
+   font-weight: lighter;
+   text-decoration: underline;
+}
+
+p.content {
+   font-size: 1em;
+   line-height: 1.5em;
+   margin-bottom: 1em;
+}
+
+a.mm:link {
+  font-size: 140%;
+  text-decoration: none;
+  color: #666666;
+}
+
+a.mm:visited {
+  color: #666666;
+}
+  
+
+a.mm:hover {
+  text-decoration: none;
+  color: black;
+}
+
+a.mmselected {
+  font-size: 140%;
+  text-decoration: underline;
+  color: black;
+}
 
 .enter_id {
    width: 20%;
@@ -113,29 +143,6 @@ h4.select {
    margin-top: 1em;
    padding-top: 0;
    margin-bottom: .3em;
-}
-
-h1.content {
-   margin-top: .3em;
-   margin-bottom: .5em;
-   padding-top: 0;
-   font-style: italic;
-   font-weight: 100;
-}
-
-h2.content {
-   margin-top: 0em;
-   margin-bottom: .7em;
-   padding: 0;
-   font-size: 140%;
-   font-weight: lighter;
-   text-decoration: underline;
-}
-
-p.content {
-   font-size: 1em;
-   line-height: 1.5em;
-   margin-bottom: 1em;
 }
 
 a.content {

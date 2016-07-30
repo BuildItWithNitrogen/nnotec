@@ -3,11 +3,11 @@
 %%% Lloyd R. Prentice
 %%% @copyright 2016 Lloyd R. Prentice 
 %%% @version 0.01
-%%% @doc index 
+%%% @doc login 
 %%% @end
 %%% -----------------------------------------------
 
--module (nindex).
+-module (n_signin).
 
 -compile(export_all).
 
@@ -17,13 +17,15 @@
 %% Macros 
 %% ***************************************************
 
--define(PATH, "/nindex").
+-define(PATH, "/n_signin").
 -define(TEMPLATE, "./site/templates/n_apps.html").
--define(MMSELECTED, "nindex").
--define(TITLE, "Welcome!").
--define(TOP, "nindex").
--define(UVARS, [id, note_type, task]).
--define(NICKNAME, n_utils:get_nickname()).
+-define(MMSELECTED, "").
+-define(TITLE, "Nnote Sign In").
+-define(TOP, "Build it with Nitrogen").
+-define(UVARS, []).
+-define(USERNAME, "Marsha").
+-define(ACCESS, public).
+-define(USER, wf:user()).
 
 %% ***************************************************
 %% Template and Title 
@@ -54,7 +56,7 @@ sidebar() ->
 content() ->
    [ #panel {body = 
         [ #p {id = content},
-          update_page()
+          update_page(?ACCESS)
         ]
    }].
 
@@ -66,10 +68,13 @@ get_page_state() ->
   List = wf:mq(?UVARS),
   list_to_tuple(List).
 
-update_page() ->
+update_page(public)  -> show_page();
+update_page(private) -> login().
+
+login() -> wf:redirect("/login").
+
+show_page() ->
    PageState = get_page_state(),
-   wf:replace(main_menu, n_menus:show_main_menu(?MMSELECTED)),
-   wf:replace(sidebar, show_sidebar(PageState)),
    wf:replace(content, show_content(PageState)),
   [ #p {} ].
 
@@ -78,48 +83,60 @@ update_page() ->
 %% Sidebar executives 
 %% ***************************************************
 
-show_sidebar({undefined, undefined, undefined}) ->
-   [ #panel {id = sidebar, body =
-     [ #h3 {text="SELECT"},
-       show_menu("WEB SITE", unselected)
-     ]
-   }].
-
 %% ***************************************************
 %% Sidebar functions 
 %% ***************************************************
-
-show_menu(Menu, Selected) ->
-   [ #h4 {class=select, text=Menu},
-         [n_menus:show_menu_item(MenuItem, Selected) || MenuItem <- menu(Menu)]
-   ].
-
 
 %% ***************************************************
 %% Sidebar menus 
 %% ***************************************************
 
-menu("WEB SITE") ->
-   [{"nitrogen", {goto, "http://nitrogenproject.com/"}},
-    {"erlang", {goto, "http://erlang.org/doc/apps/stdlib/"}},
-    {"hacker news", {goto, "https://news.ycombinator.com/"}}
-   ].
-
 %% ***************************************************
 %% Content executives 
 %% ***************************************************
 
-show_content({undefined, undefined, undefined}) ->
+show_content({}) ->
    [ #panel {id = content, body = 
-        [welcome()] 
+        [login_form()] 
    }].
 
 %% ***************************************************
 %% Content clips
 %% ***************************************************
 
+login_form() ->
+    case ?USER of % wf:user() of
+        undefined ->
+           wf:defer(login, email, #validate{validators=[
+             #is_required{text="Email required"},
+             #is_email{text="Not a valid email address."}]}),
+           wf:defer(login, password, #validate{validators=[
+             #is_required{text="Password required"}]}),
+           [ #panel {class="content", body =
+               [ #h1 {body="Sign In"},
+                 #br {},
+                 #label{text="Email"},
+                 #textbox{id=username, class="standard"},
+                 #p {},
+                 #label{text="Password"},
+                 #password{id=password, class="standard"},
+                 #p{},
+                 #button {id=signin, text="Sign In", postback=signin},
+                 #p{}
+               ]
+            }];
+         _   ->  
+            [ # panel {class="content", body =
+                [#p {text="You are logged in."}
+                ]
+            }]  
+    end.
+
+
+
 welcome() ->
-   [#h2 {class=content, text=["My Web Favorites"]}
+   [#h2 {class=content, text=["Welcome to ", ?USERNAME , "\'s ", "Nitrogen Applications!"]},
+    #p {body = "Our motto: <em>\"Build it Fast with Nitrogen\"</em>"}
    ]. 
 
 %% ***************************************************
@@ -130,12 +147,9 @@ welcome() ->
 event({main, tips}) ->
    wf:update(content, tips());
 
-event({main, logout}) ->
-   wf:clear_user(),
-   wf:redirect("/");
-
 event({main, Link}) ->
    wf:redirect(Link);
+
 
 event(content) ->
    PageState = get_page_state(),
@@ -150,7 +164,23 @@ event(content) ->
 %% ***************************************************
 
 event({goto, Link}) ->
-   wf:redirect(Link).
+   wf:redirect(Link);
+
+%% ***************************************************
+%% Content events 
+%% ***************************************************
+
+event(signin) ->
+   [Username, Password] = wf:mq([username, password]),
+   Result = naccounts_api:attempt_login(Username, Password),
+   case Result of
+      true  -> wf:user(Username),
+               wf:redirect("/");
+      false -> wf:wire(#alert{
+                      text="Can't find username or password."
+                      })
+   end.
+   
 
 %% ***************************************************
 %% Tips 

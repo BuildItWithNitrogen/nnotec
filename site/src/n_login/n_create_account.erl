@@ -3,11 +3,11 @@
 %%% Lloyd R. Prentice
 %%% @copyright 2016 Lloyd R. Prentice 
 %%% @version 0.01
-%%% @doc index 
+%%% @doc create account 
 %%% @end
 %%% -----------------------------------------------
 
--module (nindex).
+-module (n_create_account).
 
 -compile(export_all).
 
@@ -17,13 +17,15 @@
 %% Macros 
 %% ***************************************************
 
--define(PATH, "/nindex").
+-define(PATH, "/n_signin").
 -define(TEMPLATE, "./site/templates/n_apps.html").
--define(MMSELECTED, "nindex").
--define(TITLE, "Welcome!").
--define(TOP, "nindex").
--define(UVARS, [id, note_type, task]).
--define(NICKNAME, n_utils:get_nickname()).
+-define(MMSELECTED, "").
+-define(TITLE, "Nnote Sign In").
+-define(TOP, "Build it with Nitrogen").
+-define(UVARS, []).
+-define(USERNAME, "Marsha").
+-define(ACCESS, public).
+-define(USER, wf:user()).
 
 %% ***************************************************
 %% Template and Title 
@@ -54,7 +56,7 @@ sidebar() ->
 content() ->
    [ #panel {body = 
         [ #p {id = content},
-          update_page()
+          update_page(?ACCESS)
         ]
    }].
 
@@ -66,10 +68,13 @@ get_page_state() ->
   List = wf:mq(?UVARS),
   list_to_tuple(List).
 
-update_page() ->
+update_page(public)  -> show_page();
+update_page(private) -> login().
+
+login() -> wf:redirect("/login").
+
+show_page() ->
    PageState = get_page_state(),
-   wf:replace(main_menu, n_menus:show_main_menu(?MMSELECTED)),
-   wf:replace(sidebar, show_sidebar(PageState)),
    wf:replace(content, show_content(PageState)),
   [ #p {} ].
 
@@ -78,48 +83,53 @@ update_page() ->
 %% Sidebar executives 
 %% ***************************************************
 
-show_sidebar({undefined, undefined, undefined}) ->
-   [ #panel {id = sidebar, body =
-     [ #h3 {text="SELECT"},
-       show_menu("WEB SITE", unselected)
-     ]
-   }].
-
 %% ***************************************************
 %% Sidebar functions 
 %% ***************************************************
-
-show_menu(Menu, Selected) ->
-   [ #h4 {class=select, text=Menu},
-         [n_menus:show_menu_item(MenuItem, Selected) || MenuItem <- menu(Menu)]
-   ].
-
 
 %% ***************************************************
 %% Sidebar menus 
 %% ***************************************************
 
-menu("WEB SITE") ->
-   [{"nitrogen", {goto, "http://nitrogenproject.com/"}},
-    {"erlang", {goto, "http://erlang.org/doc/apps/stdlib/"}},
-    {"hacker news", {goto, "https://news.ycombinator.com/"}}
-   ].
-
 %% ***************************************************
 %% Content executives 
 %% ***************************************************
 
-show_content({undefined, undefined, undefined}) ->
+show_content({}) ->
    [ #panel {id = content, body = 
-        [welcome()] 
+        [create_account_form()] 
    }].
 
 %% ***************************************************
 %% Content clips
 %% ***************************************************
 
+create_account_form() ->  
+   wf:defer(save, username, #validate{validators=[
+      #is_required{text="Username Required"}]}),
+   wf:defer(save, password, #validate{validators=[
+      #is_required{text="Password Required"}]}),
+   wf:defer(save, password2, #validate{validators=[
+      #confirm_same{text="Passwords do not match",
+                    confirm_id=password}]}),
+   [#h1 {text="Create Account"},
+    #br {},
+    #label{text="Email or Username"},
+    #textbox{id=username},
+    #label{text="Password"},
+    #password{id=password},
+    #label{text="Confirm Password"},
+    #password{id=password2},
+    #p{},
+    #button{id=login, text="Save Account", postback=save}
+  ].
+
+
+
+
 welcome() ->
-   [#h2 {class=content, text=["My Web Favorites"]}
+   [#h2 {class=content, text=["Welcome to ", ?USERNAME , "\'s ", "Nitrogen Applications!"]},
+    #p {body = "Our motto: <em>\"Build it Fast with Nitrogen\"</em>"}
    ]. 
 
 %% ***************************************************
@@ -130,12 +140,9 @@ welcome() ->
 event({main, tips}) ->
    wf:update(content, tips());
 
-event({main, logout}) ->
-   wf:clear_user(),
-   wf:redirect("/");
-
 event({main, Link}) ->
    wf:redirect(Link);
+
 
 event(content) ->
    PageState = get_page_state(),
@@ -150,7 +157,18 @@ event(content) ->
 %% ***************************************************
 
 event({goto, Link}) ->
-   wf:redirect(Link).
+   wf:redirect(Link);
+
+%% ***************************************************
+%% Content events 
+%% ***************************************************
+
+event(save) ->
+  [Username, Password] = wf:mq([username, password]),  
+  ok = naccounts_api:create_account(Username, Password),  
+  wf:user(Username),  
+  wf:redirect("/").
+
 
 %% ***************************************************
 %% Tips 

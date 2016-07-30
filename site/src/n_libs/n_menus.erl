@@ -21,10 +21,11 @@
 %% ***************************************************
 
 main_menu() ->
-   [{"home | ",    {main, "/"}},
-    {"nindex | ",  {main, "/nindex"}},
-    {"nnote | " ,  {main, "/nnote"}},
-    {"tips",       {main, tips}}
+   [{"home | ",        {main, "/"}},
+    {"nindex | ",      {main, "/nindex"}},
+    {"nnote | " ,      {main, "/nnote"}},
+    {"tips & info | ", {main, tips}},
+    {"logout",         {main, logout}}
    ].
 
 %% ***************************************************
@@ -41,44 +42,35 @@ show_main_menu(Selected) ->
 %% Main Menu Helpers 
 %% ***************************************************
 
-show_main_menu_item(MenuItem, Selected) ->
-  {Text, {_, Page}} = MenuItem,
-   io:format("Text: ~p~n", [Text]),
-  Item = extract_menu_item(Text),
-   io:format("Menu item: ~p~n", [Item]),
-  Class = if_selected(Item, Selected),
-  [#link {class = Class, text = Text, postback = {main, Page}}].
+% show_main_menu_item({"logout", {main, "/"}}, _) ->
+%  wf:clear_user(),
+%  [#link {class = "mm", text="logout", url="/"}];
 
-if_selected(Text, Selected) ->
-   io:format("Selected: ~p ~p~n", [Text, Selected]),
-   case Text == Selected of
-      true  -> "mmselected" ;
-      false -> "mmunselected" 
+show_main_menu_item(MenuItem, Selected) ->
+  io:format("Show main - user: ~p~n", [wf:user()]),
+  {Text, Postback} = MenuItem,
+  Item = strip_space_bar(Text),
+  Class = if_selected(Item, Selected),
+  [#link {class = Class, text = Text, postback = Postback}].
+
+
+strip_space_bar(String) ->
+   Offset = string:str(String, " | "),
+   case Offset > 0 of
+      true  -> string:left(String, Offset - 1);
+      false -> String
    end.
 
-extract_menu_item(String) ->
-   io:format("I'm extracting! ~p~n", [String]),
-   Tokens = string:tokens(String, " "),
-   io:format("I've extracted: ~p~n", [Tokens]),
-   [Page| _] = Tokens,
-   io:format("Page: ~p~n", [Page]),
-   Page.
-
-
+if_selected(Text, Selected) ->
+   case Text == Selected of
+      true  -> "mmselected" ;
+      false -> "mm" 
+   end.
 
 %% ***************************************************
 %% Sidebar menus 
 %% ***************************************************
 
-% show_menus(MenuList, Selected) ->
-%   [show_menu(Menu, Selected) || Menu <- MenuList].
-
-
-% show_menu(Menu, Selected) ->
-%   MenuGroup = nnote:menu_group(Menu),
-%   [ #h4 {class=select, text=Menu},
-%         [show_menu_item(MenuItem, Selected) || MenuItem <- MenuGroup]
-%   ].
 
 show_menu_item(MenuItem, Selected) ->
   {Text, Postback} = MenuItem,

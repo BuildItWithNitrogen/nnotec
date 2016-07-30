@@ -17,19 +17,21 @@
 %% Macros 
 %% ***************************************************
 
--define(PAGE, "/").
+-define(PATH, "/").
 -define(TEMPLATE, "./site/templates/n_apps.html").
+-define(MMSELECTED, "home").
 -define(TITLE, "Welcome!").
 -define(TOP, "Build it with Nitrogen").
--define(MMSELECTED, "home").
--define(USERNAME, "Rusty Nail").
 -define(UVARS, [id, note_type, task]).
+-define(NICKNAME, n_utils:get_nickname()).
+-define(ACCESS, private).
+-define(USER, wf:user()).
 
 %% ***************************************************
-%% Template 
+%% Template and Title 
 %% ***************************************************
 
-main() -> #template { file=?TEMPLATE}. % "./site/templates/wg.html" }.
+main() -> #template { file=?TEMPLATE}. 
 
 title() -> ?TITLE.
 
@@ -54,36 +56,66 @@ sidebar() ->
 content() ->
    [ #panel {body = 
         [ #p {id = content},
-          update_page()
+          open_sesame(?ACCESS)
         ]
    }].
 
 %% ***************************************************
-%% Update page 
-%% ***************************************************
-
-update_page() ->
-   PageState = get_page_state(),
-   wf:replace(main_menu, n_menus:show_main_menu(?MMSELECTED)),
-%   wf:replace(sidebar, show_side_panel(PageState)),
-   wf:replace(content, show_content(PageState)),
-   [ #p {} ].
-
-%% ***************************************************
-%% Page state functions 
+%% Page state functions
 %% ***************************************************
 
 get_page_state() ->
-  List = [wf:q(Var) || Var <- ?UVARS],
+  List = wf:mq(?UVARS),
   list_to_tuple(List).
+
+
+open_sesame(public)  -> 
+   show_page();
+
+open_sesame(private) -> 
+   case ?USER == undefined of
+      true  -> wf:redirect("/n_signin");
+      false -> show_page()
+   end.
+
+show_page() ->
+   PageState = get_page_state(),
+   wf:replace(main_menu, n_menus:show_main_menu(?MMSELECTED)),
+   wf:replace(sidebar, show_sidebar(PageState)),
+   wf:replace(content, show_content(PageState)),
+   [ #p {} ].
+
 
 %% ***************************************************
 %% Sidebar executives 
 %% ***************************************************
 
+show_sidebar({undefined, undefined, undefined}) ->
+   [ #panel {id = sidebar, body =
+     [ #h3 {text="SELECT"},
+       show_menu("WEB SITE", unselected)
+     ]
+   }].
+
+%% ***************************************************
+%% Sidebar functions 
+%% ***************************************************
+
+show_menu(Menu, Selected) ->
+   [ #h4 {class=select, text=Menu},
+         [n_menus:show_menu_item(MenuItem, Selected) || MenuItem <- menu(Menu)]
+   ].
+
+
 %% ***************************************************
 %% Sidebar menus 
 %% ***************************************************
+
+menu("WEB SITE") ->
+   [{"nitrogen", {goto, "http://nitrogenproject.com/"}},
+    {"erlang", {goto, "http://erlang.org/doc/apps/stdlib/"}},
+    {"hacker news", {goto, "https://news.ycombinator.com/"}}
+   ].
 
 %% ***************************************************
 %% Content executives 
@@ -91,30 +123,43 @@ get_page_state() ->
 
 show_content({undefined, undefined, undefined}) ->
    [ #panel {id = content, body = 
-        [welcome()] 
+        [greeting()] 
    }].
 
 %% ***************************************************
-%% Content clips
+%% Content 
 %% ***************************************************
 
-welcome() ->
-   [#h2 {class=content, text=["Welcome to ", ?USERNAME , "\'s ", "Nitrogen Applications!"]},
+greeting() ->
+   [#h2 {class=content, text=["Welcome to ", ?NICKNAME , "\'s ", "Nitrogen Applications!"]},
     #p {body = "Our motto: <em>\"Build it Fast with Nitrogen\"</em>"}
    ]. 
 
 %% ***************************************************
-%% Top menu events 
+%% Content helpers
 %% ***************************************************
 
 
+%% ***************************************************
+%% Main menu events 
+%% ***************************************************
+
 event({main, tips}) ->
-   wf:update(main_menu, n_menus:show_main_menu("tips")),
    wf:update(content, tips());
+
+event({main, logout}) ->
+   wf:clear_user(),
+   wf:redirect("/");
+
+event({main, Link}) ->
+   wf:redirect(Link);
+
+%% ***************************************************
+%% Content events 
+%% ***************************************************
 
 event(content) ->
    PageState = get_page_state(),
-   wf:update(main_menu, n_menus:show_main_menu(?MMSELECTED)),
    wf:update(content, show_content(PageState));
 
 %% ***************************************************
@@ -125,16 +170,18 @@ event(content) ->
 %% Sidebar events 
 %% ***************************************************
 
-event({main, Link}) ->
+event({goto, Link}) ->
    wf:redirect(Link).
 
 %% ***************************************************
 %% Tips 
 %% ***************************************************
 
+
 tips() ->
    [ #panel {id = content, body =
-       [ #h2 {class="content", text="Tips"},
+       [ #h2 {class="content", text="Tips & Info"},
+         #p {body="The applications in this framework were developed by Jesse Gumm and Lloyd R. Prentice for their book <em>Build it with Nitrogen</em>. These applications are available for use and modification under the MIT License."},
          #br {},
          #button {text = "done", postback = content}
        ]
